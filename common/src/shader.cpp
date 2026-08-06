@@ -1,6 +1,11 @@
 #include "shader.h"
 
-Shader::Shader(const char* vertex_shader_path, const char* fragment_shader_path, const char* geometry_shader_path)
+Shader::Shader(const std::string& vertex_shader_path, const std::string& fragment_shader_path, const std::string& geometry_shader_path)
+{
+	createProgram(vertex_shader_path, fragment_shader_path, geometry_shader_path);
+}
+
+void Shader::createProgram(const std::string& vertex_shader_path, const std::string& fragment_shader_path, const std::string& geometry_shader_path)
 {
 	int success;
 	char information_log[1000];
@@ -58,7 +63,7 @@ Shader::Shader(const char* vertex_shader_path, const char* fragment_shader_path,
 	glAttachShader(shader_program_id_, fragment_shader_id);
 
 	unsigned int geometry_shader_id;
-	if (geometry_shader_path)
+	if (!geometry_shader_path.empty())
 	{
 		std::ifstream geometry_shader_file;
 		std::stringstream geometry_shader_stream;
@@ -102,7 +107,8 @@ Shader::Shader(const char* vertex_shader_path, const char* fragment_shader_path,
 
 	glDeleteShader(vertex_shader_id);
 	glDeleteShader(fragment_shader_id);
-	if (geometry_shader_path) {
+	if (!geometry_shader_path.empty())
+	{
 		glDeleteShader(geometry_shader_id);
 	}
 }

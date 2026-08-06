@@ -13,8 +13,12 @@ private:
 	unsigned int shader_program_id_ = 0;
 public:
 
-	Shader(const char* vertex_shader_path, const char* fragment_shader_path, const char* geometry_shader_path = nullptr);
+	Shader() = default;
 
+	Shader(const std::string& vertex_shader_path, const std::string& fragment_shader_path, const std::string& geometry_shader_path);
+
+	void createProgram(const std::string& vertex_shader_path, const std::string& fragment_shader_path, const std::string& geometry_shader_path);
+	
 	bool use();
 
 	bool set3Float(const char* uniformName, float v1, float v2, float v3);

@@ -18,11 +18,15 @@ add_executable("${CMAKE_PROJECT_NAME}" ${SOURCES})
 
 target_include_directories("${CMAKE_PROJECT_NAME}" PRIVATE 
     "${CMAKE_CURRENT_SOURCE_DIR}/common/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/techniques"
     "${CMAKE_CURRENT_SOURCE_DIR}/app"
 )
 
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/resources/")
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=0) 
+
+target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC TECHNIQUES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/techniques/")
+target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=0)
 
 target_include_directories("${CMAKE_PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/GLAD/include")
 
