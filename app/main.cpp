@@ -3,8 +3,9 @@
 #include <chrono>
 #include "utility.h"
 #include "Outlining/outlining.h"
+#include "NormalMapping/normal_mapping.h"
 
-int SCREEN_WIDTH = 1024, SCREEN_HEIGHT = 720;
+int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 int FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT;
 Input INPUT;
 GLFWwindow* window;
@@ -37,14 +38,16 @@ int main()
 		return -1;
 	}
 
-	Outlining ou(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
+	NormalMapping nm(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
 
 	float last = glfwGetTime();
 	float current = last;
 	while (!glfwWindowShouldClose(window))
 	{
 		current = glfwGetTime();
-		ou.run(current - last);
+
+		nm.run(current - last);
+		
 		last = current;
 	}
 	glfwTerminate();

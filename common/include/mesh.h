@@ -9,6 +9,7 @@ struct Vertex
 	glm::vec3 position_;
 	glm::vec3 normal_;
 	glm::vec3 tangent_;
+	glm::vec3 biTangent_;
 	glm::vec2 texture_coordinates_;
 };
 

@@ -58,6 +58,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		vertex.tangent_.x = mesh->mTangents[i].x;
 		vertex.tangent_.y = mesh->mTangents[i].y;
 		vertex.tangent_.z = mesh->mTangents[i].z;
+		vertex.biTangent_.x = mesh->mBitangents[i].x;
+		vertex.biTangent_.y = mesh->mBitangents[i].y;
+		vertex.biTangent_.z = mesh->mBitangents[i].z;
 
 		if (mesh->mTextureCoords[0])
 			vertex.texture_coordinates_ = glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
@@ -81,6 +84,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		textures.insert(textures.end(), maps.begin(), maps.end());
 
 		maps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+		textures.insert(textures.end(), maps.begin(), maps.end());
+
+		maps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
 		textures.insert(textures.end(), maps.begin(), maps.end());
 
 		maps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
