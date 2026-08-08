@@ -32,7 +32,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 	for (unsigned int i{ 0 }; i < node->mNumMeshes; ++i)
 	{
 		mesh = scene->mMeshes[node->mMeshes[i]];
-		meshes_.push_back(processMesh(mesh, scene));
+		meshes_.emplace_back(processMesh(mesh, scene));
 	}
 
 	for (unsigned int i{ 0 }; i < node->mNumChildren; ++i)
@@ -46,7 +46,9 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	std::vector<Texture> textures;
 
 	Vertex vertex;
-
+	vertices.reserve(mesh->mNumVertices);
+	indices.reserve(mesh->mNumFaces);
+	
 	for (unsigned int i{ 0 }; i < mesh->mNumVertices; ++i)
 	{
 		vertex.position_.x = mesh->mVertices[i].x;
@@ -67,31 +69,28 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		else
 			vertex.texture_coordinates_ = glm::vec2(0.0f, 0.0f);
 
-		vertices.push_back(vertex);
+		vertices.emplace_back(vertex);
 	}
 
 	for (unsigned int i{ 0 }; i < mesh->mNumFaces; ++i)
 	{
 		aiFace& face = mesh->mFaces[i];
 		for (unsigned int j{ 0 }; j < face.mNumIndices; ++j)
-			indices.push_back(face.mIndices[j]);
+			indices.emplace_back(face.mIndices[j]);
 	}
 
-	if (mesh->mMaterialIndex >= 0)
-	{
-		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-		std::vector<Texture> maps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-		textures.insert(textures.end(), maps.begin(), maps.end());
+	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+	std::vector<Texture> maps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+	textures.insert(textures.end(), maps.begin(), maps.end());
 
-		maps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-		textures.insert(textures.end(), maps.begin(), maps.end());
+	maps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+	textures.insert(textures.end(), maps.begin(), maps.end());
 
-		maps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
-		textures.insert(textures.end(), maps.begin(), maps.end());
+	maps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
+	textures.insert(textures.end(), maps.begin(), maps.end());
 
-		maps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
-		textures.insert(textures.end(), maps.begin(), maps.end());
-	}
+	maps = loadMaterialTextures(material, aiTextureType_NORMALS, "texture_normal");
+	textures.insert(textures.end(), maps.begin(), maps.end());
 
 	return Mesh(vertices, indices, textures);
 }
@@ -110,7 +109,7 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 			if (std::strcmp(cached_textures_[j].path_.data(), str.C_Str()) == 0)
 			{
 				skip = true;
-				textures.push_back(cached_textures_[j]);
+				textures.emplace_back(cached_textures_[j]);
 				break;
 			}
 
@@ -123,8 +122,8 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
 			texture.type_ = type_name;
 			texture.path_ = str.C_Str();
 			if (texture.id_)
-				textures.push_back(texture);
-			cached_textures_.push_back(texture);
+				textures.emplace_back(texture);
+			cached_textures_.emplace_back(texture);
 		}
 	}
 

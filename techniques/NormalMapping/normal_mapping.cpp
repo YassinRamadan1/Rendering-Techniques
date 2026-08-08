@@ -2,16 +2,16 @@
 
 NormalMapping::NormalMapping(int scrWidth, int scrHeight, int fbWidth, int fbHeight, Input& input, GLFWwindow* window)
 	: SCREEN_WIDTH(scrWidth), SCREEN_HEIGHT(scrHeight), FRAMEBUFFER_WIDTH(fbWidth), FRAMEBUFFER_HEIGHT(fbHeight),
-	INPUT(&input), WINDOW(window), model(std::string(RESOURCES_PATH) + "models/brickwall/brickwall.fbx")
+	INPUT(&input), WINDOW(window), model(std::string(RESOURCES_PATH) + "models/stonefloor/copplestone.gltf")
 {
 	std::string e;
 	std::string s = std::string(TECHNIQUES_PATH);
-	std::string vsPath = s + "NormalMapping/shaders/brickwall_vs.shader";
-	std::string fsPath = s + "NormalMapping/shaders/brickwall_fs.shader";
+	std::string vsPath = s + "NormalMapping/shaders/stonefloor_vs.shader";
+	std::string fsPath = s + "NormalMapping/shaders/stonefloor_fs.shader";
 	shader.createProgram(vsPath, fsPath, e);
 
-	vsPath = s + "NormalMapping/shaders/brickwallNormal_vs.shader";
-	fsPath = s + "NormalMapping/shaders/brickwallNormal_fs.shader";
+	vsPath = s + "NormalMapping/shaders/stonefloorNormal_vs.shader";
+	fsPath = s + "NormalMapping/shaders/stonefloorNormal_fs.shader";
 	normalShader.createProgram(vsPath, fsPath, e);
 	
 	vsPath = s + "NormalMapping/shaders/lightCube_vs.shader";
@@ -86,11 +86,11 @@ void NormalMapping::run(float deltaTime)
 	handleInput(deltaTime);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glm::vec3 lightPosition(10, 1., -3), lightColor(1., 1., 1.);
+	glm::vec3 lightPosition(0, 1., -3), lightColor(1., 1., 1.);
 	modelMat = glm::translate(glm::mat4(1.), lightPosition);
 	modelMat = modelMat * glm::scale(glm::mat4(1.), glm::vec3(1.));
 	view = camera.getViewMatrix();
-	projection = glm::perspective(glm::radians(camera.zoom), SCREEN_WIDTH * 1.F / SCREEN_HEIGHT, 1.F, 100.F);
+	projection = glm::perspective(glm::radians(camera.zoom), SCREEN_WIDTH * 1.F / SCREEN_HEIGHT, .1F, 100.F);
 
 	// draw light cube
 	lightShader.use();
@@ -101,8 +101,9 @@ void NormalMapping::run(float deltaTime)
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
-	modelMat = glm::translate(glm::mat4(1.), glm::vec3(10., 0., -7.));
-
+	glm::mat4 rotation = glm::rotate(glm::mat4(1.), glm::radians(float(-90.)), glm::vec3(1, 0, 0)) * glm::rotate(glm::mat4(1.), glm::radians(float(180.)), glm::vec3(0, 1, 0));
+	modelMat = glm::translate(glm::mat4(1.), glm::vec3(1., -2., -3.));
+	modelMat = modelMat * rotation;
 	normalShader.use();
 	normalShader.setMatrix4f("model", false, glm::value_ptr(modelMat));
 	normalShader.setMatrix4f("view", false, glm::value_ptr(view));
@@ -112,7 +113,8 @@ void NormalMapping::run(float deltaTime)
 	normalShader.set3Float("cameraPosition", camera.position.x, camera.position.y, camera.position.z);
 	model.draw(normalShader);
 
-	modelMat = glm::translate(glm::mat4(1.), glm::vec3(7., 0., -7.));
+	modelMat = glm::translate(glm::mat4(1.), glm::vec3(-1., -2., -3.));
+	modelMat = modelMat * rotation;
 	shader.use();
 	shader.setMatrix4f("model", false, glm::value_ptr(modelMat));
 	shader.setMatrix4f("view", false, glm::value_ptr(view));
