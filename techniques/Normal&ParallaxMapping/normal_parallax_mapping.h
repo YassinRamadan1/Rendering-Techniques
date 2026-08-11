@@ -14,11 +14,11 @@ class NormalMapping
 	GLFWwindow* WINDOW;
 
 	float timer, timeToUpdate;
-	unsigned int textureId;
-	int textureSlot;
+	unsigned int textureIdHeight, textureIdAO;
+	int textureSlotHeight, textureSlotAO;
 	unsigned int vao, vbo;
 	Camera camera;
-	Shader shader, normalShader, lightShader;
+	Shader shader, normalShader, normalParallaxShader, normalParallaxAOShader, lightShader;
 	glm::mat4 modelMat;
 	glm::mat4 view;
 	glm::mat4 projection;

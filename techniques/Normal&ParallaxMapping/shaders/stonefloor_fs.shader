@@ -18,15 +18,23 @@ struct Material
 uniform vec3 cameraPosition;
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
+uniform float shininessCoeffecient;
 uniform Material material;
 
 void main()
 {
 	vec3 normal = normalize(fs_in.normal);
 	
+	vec3 viewDirection = normalize(cameraPosition - fs_in.fragPosition);
+
 	vec3 lightDirection = normalize(lightPosition - fs_in.fragPosition);
 	vec3 c = texture(material.texture_diffuse1, fs_in.textureCoordinates).rgb * lightColor;
-	vec3 diffuse = c * clamp(dot(normal, lightDirection), 0.,1.);
+	vec3 diffuse = c * max(dot(normal, lightDirection), 0.);
 	vec3 ambient = 0.1 * c;
-	fragColor = vec4(diffuse + ambient, 1.);
+	
+	vec3 halfway = normalize(viewDirection + lightDirection);
+	vec3 specular = 0.3 * pow(max(dot(normal, halfway), 0.), shininessCoeffecient) * lightColor;
+
+	fragColor = vec4(diffuse + ambient + specular, 1.);
+
 }

@@ -11,7 +11,6 @@ out VS_OUT
 	vec3 lightPosition;
 	vec3 cameraPosition;
 	vec3 fragPosition;
-	vec3 no;
 } vs_out;
 
 uniform vec3 cameraPosition;
@@ -29,7 +28,6 @@ void main()
 	vec3 biTangent = cross(normal, tangent);
 
 	mat3 tbn = transpose(mat3(tangent, biTangent, normal));
-	vs_out.no = normal;
 	vs_out.textureCoordinates = in_textureCoordinates;
 	vs_out.cameraPosition = tbn * cameraPosition;
 	vs_out.lightPosition = tbn * lightPosition;

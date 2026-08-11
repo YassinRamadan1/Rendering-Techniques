@@ -3,7 +3,7 @@
 #include <chrono>
 #include "utility.h"
 #include "Outlining/outlining.h"
-#include "NormalMapping/normal_mapping.h"
+#include "Normal&ParallaxMapping/normal_parallax_mapping.h"
 
 int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 int FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT;
