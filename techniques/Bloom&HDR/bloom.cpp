@@ -28,7 +28,6 @@ Bloom::Bloom(int scrWidth, int scrHeight, int fbWidth, int fbHeight, Input& inpu
 	l[3].ambient = glm::vec3(0.02f, 0.02f, 0.02f);
 	l[3].diffuse = glm::vec3(15.0f, 15.0f, 15.0f);
 
-
 	std::string e;
 	std::string s = std::string(TECHNIQUES_PATH);
 	std::string vsPath = s + "Bloom&HDR/shaders/cube_vs.shader";

@@ -3,7 +3,7 @@
 #include <chrono>
 #include "utility.h"
 #include "Outlining/outlining.h"
-#include "Bloom&HDR/bloom.h"
+#include "DeferredShading/deferred_shading.h"
 
 int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 int FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT;
@@ -38,7 +38,7 @@ int main()
 		return -1;
 	}
 
-	Bloom b(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
+	DeferredShading df(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
 
 	float last = glfwGetTime();
 	float current = last;
@@ -46,7 +46,7 @@ int main()
 	{
 		current = glfwGetTime();
 
-		b.run(current - last);
+		df.run(current - last);
 		
 		last = current;
 	}
