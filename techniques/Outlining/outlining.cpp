@@ -70,6 +70,7 @@ Outlining::Outlining(int scrWidth, int scrHeight, int fbWidth, int fbHeight, Inp
 	glClearColor(0.15, 0.25, 0.4, 1.);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
+	glEnable(GL_FRAMEBUFFER_SRGB);
 
 	textureSlot = 0;
 	std::string texturePath = RESOURCES_PATH + std::string("textures/container2.png");

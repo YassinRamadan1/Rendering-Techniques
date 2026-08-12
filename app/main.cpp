@@ -3,7 +3,7 @@
 #include <chrono>
 #include "utility.h"
 #include "Outlining/outlining.h"
-#include "Normal&ParallaxMapping/normal_parallax_mapping.h"
+#include "Bloom&HDR/bloom.h"
 
 int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 int FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT;
@@ -38,7 +38,7 @@ int main()
 		return -1;
 	}
 
-	NormalMapping nm(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
+	Bloom b(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
 
 	float last = glfwGetTime();
 	float current = last;
@@ -46,7 +46,7 @@ int main()
 	{
 		current = glfwGetTime();
 
-		nm.run(current - last);
+		b.run(current - last);
 		
 		last = current;
 	}

@@ -94,6 +94,7 @@ NormalMapping::NormalMapping(int scrWidth, int scrHeight, int fbWidth, int fbHei
 
 	glClearColor(0.15, 0.25, 0.4, 1.);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_FRAMEBUFFER_SRGB);
 }
 
 void NormalMapping::run(float deltaTime)
