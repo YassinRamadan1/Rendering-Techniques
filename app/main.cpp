@@ -3,7 +3,7 @@
 #include <chrono>
 #include "utility.h"
 #include "Outlining/outlining.h"
-#include "DeferredShading/deferred_shading.h"
+#include "SSAO/ssao.h"
 
 int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 int FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT;
@@ -38,7 +38,7 @@ int main()
 		return -1;
 	}
 
-	DeferredShading df(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
+	SSAO s(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
 
 	float last = glfwGetTime();
 	float current = last;
@@ -46,7 +46,7 @@ int main()
 	{
 		current = glfwGetTime();
 
-		df.run(current - last);
+		s.run(current - last);
 		
 		last = current;
 	}

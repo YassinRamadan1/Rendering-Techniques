@@ -1,6 +1,6 @@
-#include "deferred_shading.h"
+#include "ssao.h"
 
-DeferredShading::DeferredShading(int scrWidth, int scrHeight, int fbWidth, int fbHeight, Input& input, GLFWwindow* window)
+SSAO::SSAO(int scrWidth, int scrHeight, int fbWidth, int fbHeight, Input& input, GLFWwindow* window)
 	: SCREEN_WIDTH(scrWidth), SCREEN_HEIGHT(scrHeight), FRAMEBUFFER_WIDTH(fbWidth), FRAMEBUFFER_HEIGHT(fbHeight),
 	INPUT(&input), WINDOW(window), model(std::string(RESOURCES_PATH) + "models/backpack/backpack.obj"), sphereModel(std::string(RESOURCES_PATH) + "models/sphere/sphere.glb")
 {
@@ -45,25 +45,33 @@ DeferredShading::DeferredShading(int scrWidth, int scrHeight, int fbWidth, int f
 
 	std::string e;
 	std::string s = std::string(TECHNIQUES_PATH);
-	std::string vsPath = s + "DeferredShading/shaders/lightPassQuad_vs.shader";
-	std::string fsPath = s + "DeferredShading/shaders/lightPassQuad_fs.shader";
+	std::string vsPath = s + "SSAO/shaders/lightPassQuad_vs.shader";
+	std::string fsPath = s + "SSAO/shaders/lightPassQuad_fs.shader";
 	lightPassQuadShader.createProgram(vsPath, fsPath, e);
 
-	vsPath = s + "DeferredShading/shaders/lightPassSphere_vs.shader";
-	fsPath = s + "DeferredShading/shaders/empty_fs.shader";
+	vsPath = s + "SSAO/shaders/lightPassSphere_vs.shader";
+	fsPath = s + "SSAO/shaders/empty_fs.shader";
 	emptyShader.createProgram(vsPath, fsPath, e);
 
-	vsPath = s + "DeferredShading/shaders/lightPassSphere_vs.shader";
-	fsPath = s + "DeferredShading/shaders/lightPassSphere_fs.shader";
+	vsPath = s + "SSAO/shaders/lightPassSphere_vs.shader";
+	fsPath = s + "SSAO/shaders/lightPassSphere_fs.shader";
 	lightPassSphereShader.createProgram(vsPath, fsPath, e);
 
-	vsPath = s + "DeferredShading/shaders/lightCube_vs.shader";
-	fsPath = s + "DeferredShading/shaders/lightCube_fs.shader";
+	vsPath = s + "SSAO/shaders/lightCube_vs.shader";
+	fsPath = s + "SSAO/shaders/lightCube_fs.shader";
 	lightCubeShader.createProgram(vsPath, fsPath, e);
 
-	vsPath = s + "DeferredShading/shaders/geometryPass_vs.shader";
-	fsPath = s + "DeferredShading/shaders/geometryPass_fs.shader";
+	vsPath = s + "SSAO/shaders/geometryPass_vs.shader";
+	fsPath = s + "SSAO/shaders/geometryPass_fs.shader";
 	geometryPassShader.createProgram(vsPath, fsPath, e);
+
+	vsPath = s + "SSAO/shaders/ssaoPass_vs.shader";
+	fsPath = s + "SSAO/shaders/ssaoPass_fs.shader";
+	ssaoShader.createProgram(vsPath, fsPath, e);
+
+	vsPath = s + "SSAO/shaders/ssaoPass_vs.shader";
+	fsPath = s + "SSAO/shaders/blur_fs.shader";
+	blurShader.createProgram(vsPath, fsPath, e);
 
 	float quadVertices[] =
 	{
@@ -127,9 +135,58 @@ DeferredShading::DeferredShading(int scrWidth, int scrHeight, int fbWidth, int f
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthAttachment, 0);
+
+	// ssao attachments
+	glGenFramebuffers(1, &ssaoFbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, ssaoFbo);
+	glGenTextures(1, &ssaoAttachments[0]);
+	glBindTexture(GL_TEXTURE_2D, ssaoAttachments[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, 0, GL_RED, GL_FLOAT, nullptr);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoAttachments[0], 0);
+
+	glGenTextures(1, &ssaoAttachments[1]);
+	glBindTexture(GL_TEXTURE_2D, ssaoAttachments[1]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, 0, GL_RED, GL_FLOAT, nullptr);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, ssaoAttachments[1], 0);
+
+
+	ssaoKernel.reserve(64);
+	std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
+	std::default_random_engine generator;
+	for (unsigned int i = 0; i < 64; ++i)
+	{
+		float scale = float(i) / 64;
+		scale = glm::mix(0.1, 1., scale * scale);
+		
+		glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
+		sample = scale * glm::normalize(sample);
+		ssaoKernel.emplace_back(sample);
+	}
+
+	ssaoNoise.reserve(16);
+	for (unsigned int i = 0; i < 16; ++i)
+	{
+		ssaoNoise.emplace_back(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, 0.0);
+	}
+
+	glGenTextures(1, &noiseTex);
+	glBindTexture(GL_TEXTURE_2D, noiseTex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
 }
 
-void DeferredShading::geometryPass()
+void SSAO::geometryPass()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
@@ -168,7 +225,57 @@ void DeferredShading::geometryPass()
 	model.draw(geometryPassShader);
 }
 
-void DeferredShading::dirLightPass()
+void SSAO::aoPass()
+{
+	unsigned int attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+	glBindFramebuffer(GL_FRAMEBUFFER, ssaoFbo);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_STENCIL_TEST);
+	glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+
+	glDrawBuffers(2, attachments);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDrawBuffers(1, &attachments[0]);
+
+	glActiveTexture(GL_TEXTURE11);
+	glBindTexture(GL_TEXTURE_2D, colorAttachments[0]);
+	glActiveTexture(GL_TEXTURE12);
+	glBindTexture(GL_TEXTURE_2D, colorAttachments[1]);
+	glActiveTexture(GL_TEXTURE13);
+	glBindTexture(GL_TEXTURE_2D, noiseTex);
+
+	ssaoShader.use();
+	ssaoShader.set1Int("texture_position", 11);
+	ssaoShader.set1Int("texture_normal", 12);
+	ssaoShader.set1Int("texture_noise", 13);
+	ssaoShader.setMatrix4f("projection", false, glm::value_ptr(projection));
+	ssaoShader.set2Float("resolution", FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+	ssaoShader.set1Float("radius", 0.5);
+	ssaoShader.set1Float("bias", 0.025);
+
+	std::string s;
+	for (int i = 0; i < ssaoKernel.size(); ++i)
+	{
+		s = "samples[" + std::to_string(i) + "]";
+		ssaoShader.set3Float(s.c_str(), ssaoKernel[i].x, ssaoKernel[i].y, ssaoKernel[i].z);
+	}
+
+	glBindVertexArray(quad_vao);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glDrawBuffers(1, &attachments[1]);
+	glActiveTexture(GL_TEXTURE9);
+	glBindTexture(GL_TEXTURE_2D, ssaoAttachments[0]);
+
+	blurShader.use();
+	blurShader.set1Int("texture_ao", 9);
+	blurShader.set2Float("resolution", FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
+	glBindVertexArray(quad_vao);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void SSAO::dirLightPass()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glDrawBuffer(GL_BACK);
@@ -188,16 +295,28 @@ void DeferredShading::dirLightPass()
 	lightPassQuadShader.use();
 	lightPassQuadShader.set1Float("shininessCoeffecient", 32.);
 	lightPassQuadShader.set2Float("resolution", FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
-	lightPassQuadShader.set3Float("cameraPosition", camera.position.x, camera.position.y, camera.position.z);
+	lightPassQuadShader.set3Float("cameraPosition", 0, 0, 0);
+	lightPassQuadShader.setMatrix4f("view", false, glm::value_ptr(view));
+	glActiveTexture(GL_TEXTURE9);
+	glBindTexture(GL_TEXTURE_2D, ssaoAttachments[1]);
 	glActiveTexture(GL_TEXTURE11);
 	glBindTexture(GL_TEXTURE_2D, colorAttachments[0]);
 	glActiveTexture(GL_TEXTURE12);
 	glBindTexture(GL_TEXTURE_2D, colorAttachments[1]);
 	glActiveTexture(GL_TEXTURE13);
 	glBindTexture(GL_TEXTURE_2D, colorAttachments[2]);
+	lightPassQuadShader.set1Int("texture_ao", 9);
 	lightPassQuadShader.set1Int("texture_position", 11);
 	lightPassQuadShader.set1Int("texture_normal", 12);
 	lightPassQuadShader.set1Int("texture_color", 13);
+	if (INPUT->keyboard[Button::NUM_1].isPressed)
+	{
+		lightPassQuadShader.set1Int("withAO", 0);
+	}
+	else
+	{
+		lightPassQuadShader.set1Int("withAO", 1);
+	}
 
 	lightPassQuadShader.set3Float("light[0].direction", dirL[0].direction.x, dirL[0].direction.y, dirL[0].direction.z);
 	lightPassQuadShader.set3Float("light[0].ambient", dirL[0].ambient.x, dirL[0].ambient.y, dirL[0].ambient.z);
@@ -213,7 +332,7 @@ void DeferredShading::dirLightPass()
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
-void DeferredShading::stencilPass(int i)
+void SSAO::stencilPass(int i)
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_FALSE);
@@ -241,7 +360,7 @@ void DeferredShading::stencilPass(int i)
 	sphereModel.draw(emptyShader);
 }
 
-void DeferredShading::pointLightPass(int i)
+void SSAO::pointLightPass(int i)
 {
 	glDrawBuffer(GL_BACK);
 	glDisable(GL_DEPTH_TEST);
@@ -260,11 +379,20 @@ void DeferredShading::pointLightPass(int i)
 	lightPassSphereShader.setMatrix4f("projection", false, glm::value_ptr(projection));
 	lightPassSphereShader.set1Float("shininessCoeffecient", 32.);
 	lightPassSphereShader.set2Float("resolution", FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT);
-	lightPassSphereShader.set3Float("cameraPosition", camera.position.x, camera.position.y, camera.position.z);
-	lightPassSphereShader.set1Int("material.texture_specular1", textureSlotSpec);
+	lightPassSphereShader.set3Float("cameraPosition", 0, 0, 0);
+	lightPassQuadShader.setMatrix4f("view", false, glm::value_ptr(view));
+	lightPassSphereShader.set1Int("texture_ao", 9);
 	lightPassSphereShader.set1Int("texture_position", 11);
 	lightPassSphereShader.set1Int("texture_normal", 12);
 	lightPassSphereShader.set1Int("texture_color", 13);
+	if (INPUT->keyboard[Button::NUM_1].isPressed)
+	{
+		lightPassSphereShader.set1Int("withAO", 0);
+	}
+	else
+	{
+		lightPassSphereShader.set1Int("withAO", 1);
+	}
 
 	float lightMax = std::fmaxf(std::fmaxf(l[i].diffuse.r, l[i].diffuse.g), l[i].diffuse.b);
 	float radius = (-l[i].linear + std::sqrtf(l[i].linear * l[i].linear - 4 * l[i].quadratic * (l[i].constant - (256.0 / 5.0) * lightMax))) / (2 * l[i].quadratic);
@@ -282,7 +410,7 @@ void DeferredShading::pointLightPass(int i)
 	sphereModel.draw(lightPassSphereShader);
 }
 
-void DeferredShading::forwardPass()
+void SSAO::forwardPass()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -309,11 +437,20 @@ void DeferredShading::forwardPass()
 	}
 }
 
-void DeferredShading::run(float deltaTime)
+void SSAO::run(float deltaTime)
 {
 	handleInput(deltaTime);
 
 	geometryPass();
+
+	if (INPUT->keyboard[Button::NUM_1].isPressed)
+	{
+
+	}
+	else
+	{
+		aoPass();
+	}
 
 	dirLightPass();
 
@@ -335,7 +472,7 @@ void DeferredShading::run(float deltaTime)
 	glfwPollEvents();
 }
 
-void DeferredShading::handleInput(float deltaTime)
+void SSAO::handleInput(float deltaTime)
 {
 	processInput(WINDOW, *INPUT);
 

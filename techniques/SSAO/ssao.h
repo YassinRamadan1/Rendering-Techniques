@@ -4,7 +4,7 @@
 #include "model.h"
 #include "shader.h"
 
-class DeferredShading
+class SSAO
 {
 	int SCREEN_WIDTH;
 	int SCREEN_HEIGHT;
@@ -17,8 +17,12 @@ class DeferredShading
 	int textureSlotSpec;
 	unsigned int quad_vao, quad_vbo;
 	unsigned int fbo, depthAttachment, colorAttachments[3];
+	unsigned int ssaoFbo, ssaoAttachments[2], noiseTex;
+
+	std::vector<glm::vec3> ssaoKernel;
+	std::vector<glm::vec3> ssaoNoise;
 	Camera camera;
-	Shader lightPassQuadShader, geometryPassShader, lightCubeShader, lightPassSphereShader, emptyShader;
+	Shader lightPassQuadShader, geometryPassShader, lightCubeShader, lightPassSphereShader, emptyShader, ssaoShader, blurShader;
 	glm::mat4 modelMat;
 	glm::mat4 view;
 	glm::mat4 projection;
@@ -27,7 +31,10 @@ class DeferredShading
 	DirLight dirL[2];
 	void handleInput(float deltaTime);
 	void draw();
+	
 	void geometryPass();
+
+	void aoPass();
 
 	void dirLightPass();
 
@@ -38,6 +45,6 @@ class DeferredShading
 	void forwardPass();
 
 public:
-	DeferredShading(int scrWidth, int scrHeight, int fbWidth, int fbHeight, Input& input, GLFWwindow* window);
+	SSAO(int scrWidth, int scrHeight, int fbWidth, int fbHeight, Input& input, GLFWwindow* window);
 	void run(float deltaTime);
 };
