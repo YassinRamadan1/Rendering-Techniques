@@ -1,14 +1,5 @@
 #version 440
 
-struct DirLight
-{
-    vec3 direction;
-	
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
-
 struct PointLight
 {
     vec3 position;
@@ -30,8 +21,7 @@ uniform sampler2D texture_color;
 uniform vec2 resolution;
 
 uniform vec3 cameraPosition;
-uniform DirLight dirLight;
-uniform PointLight light[4];
+uniform PointLight light;
 uniform float shininessCoeffecient;
 
 vec3 calcPointLight(PointLight l, vec3 normal);
@@ -41,11 +31,7 @@ void main()
 	vec2 textureCoordinates = gl_FragCoord.xy / resolution;
 	vec3 normal = texture(texture_normal, textureCoordinates).rgb;
 
-	vec3 color = vec3(0);
-	for(int i = 0; i < 4; ++i)
-	{
-		color += calcPointLight(light[i], normal);
-	}
+	vec3 color = calcPointLight(light, normal);
 
 	fragColor = vec4(color, 1.);
 }
