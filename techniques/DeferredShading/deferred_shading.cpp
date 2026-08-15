@@ -9,7 +9,7 @@ DeferredShading::DeferredShading(int scrWidth, int scrHeight, int fbWidth, int f
 	dirL[0].diffuse = glm::vec3(0.15f, 0.15f, 0.25f);
 	dirL[0].specular = glm::vec3(0.20f, 0.20f, 0.30f);
 
-	dirL[1].direction = glm::vec3(0.5f, 0.5f, 1.0f);
+	dirL[1].direction = glm::vec3(0.5f, -0.5f, -1.0f);
 	dirL[1].ambient = glm::vec3(0.02f, 0.01f, 0.0f);
 	dirL[1].diffuse = glm::vec3(0.15f, 0.10f, 0.05f);
 	dirL[1].specular = glm::vec3(0.20f, 0.15f, 0.10f);
