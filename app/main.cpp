@@ -2,8 +2,7 @@
 #include <vector>
 #include <chrono>
 #include "utility.h"
-#include "Outlining/outlining.h"
-#include "ShadowMapping/shadow_mapping.h"
+#include "PBR/DirectLighting/direct_lighting.h"
 
 int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 int FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT;
@@ -38,7 +37,7 @@ int main()
 		return -1;
 	}
 
-	ShadowMapping sm(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
+	DirectLighting dl(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
 
 	float last = glfwGetTime();
 	float current = last;
@@ -46,7 +45,7 @@ int main()
 	{
 		current = glfwGetTime();
 
-		sm.run(current - last);
+		dl.run(current - last);
 		
 		last = current;
 	}
