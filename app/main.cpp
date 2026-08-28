@@ -2,7 +2,7 @@
 #include <vector>
 #include <chrono>
 #include "utility.h"
-#include "PBR/DirectLighting/direct_lighting.h"
+#include "PBR/pbr.h"
 
 int SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720;
 int FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT;
@@ -37,7 +37,7 @@ int main()
 		return -1;
 	}
 
-	DirectLighting dl(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
+	PBR pb(SCREEN_WIDTH, SCREEN_HEIGHT, FRAMEBUFFER_WIDTH, FRAMEBUFFER_HEIGHT, INPUT, window);
 
 	float last = glfwGetTime();
 	float current = last;
@@ -45,7 +45,7 @@ int main()
 	{
 		current = glfwGetTime();
 
-		dl.run(current - last);
+		pb.run(current - last);
 		
 		last = current;
 	}
@@ -68,8 +68,8 @@ unsigned int loadTexture2D(const char* path, unsigned int texture_slot, bool gam
 
 	unsigned char* image = stbi_load(path, &width, &height, &nrChannels, 0);
 
-	if (!image) {
-
+	if (!image)
+	{
 		std::cout << "Error! Couldn't load texture with path :" << path << '\n';
 		return 0;
 	}
@@ -89,6 +89,39 @@ unsigned int loadTexture2D(const char* path, unsigned int texture_slot, bool gam
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+	stbi_image_free(image);
+
+	return id;
+}
+
+unsigned int loadHDRTexture2D(const char* path, unsigned int texture_slot)
+{
+	stbi_set_flip_vertically_on_load(true);
+	int width, height, nrChannels, format, internal_format;
+	unsigned int id;
+
+	float* image = stbi_loadf(path, &width, &height, &nrChannels, 0);
+
+	if (!image)
+	{
+		std::cout << "Error! Couldn't load texture with path :" << path << '\n';
+		return 0;
+	}
+
+	format = nrChannels == 3 ? GL_RGB : nrChannels == 4 ? GL_RGBA : GL_RED;
+
+	internal_format = nrChannels == 3 ? GL_RGB16F : nrChannels == 4 ? GL_RGBA16F : GL_R16F;;
+
+	glGenTextures(1, &id);
+	glActiveTexture(GL_TEXTURE0 + texture_slot);
+	glBindTexture(GL_TEXTURE_2D, id);
+	glTexImage2D(GL_TEXTURE_2D, 0, internal_format, width, height, 0, format, GL_FLOAT, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	stbi_image_free(image);
 
@@ -115,7 +148,7 @@ unsigned int loadTextureCube(const char* path)
 	glActiveTexture(GL_TEXTURE10);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 
-	for (int i = 0; i < faces.size(); i++)
+	for (int i = 0; i < faces.size(); ++i)
 	{
 		std::string location = path + faces[i];
 		unsigned char* image = stbi_load(location.c_str(), &width, &height, &nrChannels, 0);

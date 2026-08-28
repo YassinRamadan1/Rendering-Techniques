@@ -122,4 +122,6 @@ void processInput(GLFWwindow* window, Input& input);
 
 unsigned int loadTexture2D(const char* path, unsigned int texture_slot, bool gamma);
 
+unsigned int loadHDRTexture2D(const char* path, unsigned int texture_slot);
+
 unsigned int loadTextureCube(const char* path);
